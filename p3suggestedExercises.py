@@ -3,7 +3,7 @@
 # @Author: Jeremiah Marks
 # @Date:   2015-03-02 23:11:48
 # @Last Modified 2015-03-03
-# @Last Modified time: 2015-03-03 00:25:12
+# @Last Modified time: 2015-03-03 01:00:34
 
 
 # From http://krondo.com/blog/?p=1333 - suggested Exercises
@@ -77,10 +77,10 @@
 
 
 class Countdown(object):
+
     def __init__(self, counterStart):
       self.complete=False
       self.counter = counterStart
-      self.count()
 
     def count(self):
         if self.counter == 0:
@@ -93,12 +93,32 @@ class Countdown(object):
             reactor.callLater(1, self.count)
 
 class Countdowns(object):
-  """
-  Note:  This is a terrible class name since it is only one
-  letter different than the other class.  That said, it 
-  is designed to hold multiple countdown timers, so
-  whatever, I do what I want.
-  """
+    """
+    Note:  This is a terrible class name since it is only one
+    letter different than the other class.  That said, it 
+    is designed to hold multiple countdown timers, so
+    whatever, I do what I want.
+    """
+    def __init__(self, *args):
+      self.allCountdowns=[Countdown(counterStart) for counterStart, name in args]
+      self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
 
-  def __init__(self, *args):
-    
+    def startTheLoop(self):
+      for eachActiveCounter in self.allCountdowns:
+        self.theActualLoop(eachActiveCounter)
+
+    def theActualLoop(self, countDownTimer):
+      if not countDownTimer.complete:
+          countDownTimer.count()
+          reactor.callLater(1,self.theActualLoop, countDownTimer)
+      else:
+          print "One loop complete"
+          self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
+          print "%i loops to go!" %(self.activeCounters)
+          if self.activeCounters==0: reactor.stop()
+
+if __name__ == '__main__':
+    from twisted.internet import reactor
+    groupOfCountdowns=Countdowns([3,"a"],[5,"b"],[10,"c"])
+    reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
+    reactor.run()
