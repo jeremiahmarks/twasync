@@ -3,7 +3,7 @@
 # @Author: Jeremiah Marks
 # @Date:   2015-03-02 23:11:48
 # @Last Modified 2015-03-03
-# @Last Modified time: 2015-03-03 01:26:41
+# @Last Modified time: 2015-03-03 02:30:32
 
 
 # From http://krondo.com/blog/?p=1333 - suggested Exercises
@@ -180,11 +180,11 @@ class Countdowns(object):
           self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
           if self.activeCounters==0: reactor.stop()
 
-if __name__ == '__main__':
-    from twisted.internet import reactor
-    groupOfCountdowns=Countdowns([10,"a",1.5],[2,"b", 15],[15,"c", 0.7])
-    reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
-    reactor.run()
+# if __name__ == '__main__':
+#     from twisted.internet import reactor
+#     groupOfCountdowns=Countdowns([10,"a",1.5],[2,"b", 15],[15,"c", 0.7])
+#     reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
+#     reactor.run()
 ############################################################
 ## Notes:
     ## this runs more or less as expected. I found that I was 
@@ -195,3 +195,86 @@ if __name__ == '__main__':
     ## was getting called for the delay even after there were
     ## zero cycles left.  
 ############################################################
+############################################################
+############################################################
+############################################################
+############################################################
+############################################################
+
+###        Problem 2
+  # 2. Consider the LoopingCall class in twisted.internet.task. 
+  # Rewrite the countdown program above to use LoopingCall. 
+  # You only need the start and stop methods and you don’t 
+  # need to use the “deferred” return value in any way. 
+  # We’ll learn what a “deferred” value is in a later Part.
+
+## twisted documentation on internet.task:  
+  ## http://twistedmatrix.com/documents/current/api/twisted.internet.task.html
+## on task.LoopingCall:  
+  ## http://twistedmatrix.com/documents/current/api/twisted.internet.task.LoopingCall.html
+
+
+## Highlights:  
+  ## twisted.internet.task.LoopingCall.__init__(self, f, *a, **kw)
+    ## f =The function to call.
+    ## a =A tuple of arguments to pass the function.
+    ## kw =A dictionary of keyword arguments to pass to the function.
+  ## twisted.internet.task.LoopingCall.start(self, interval, now=True)
+    ## interval -- The number of seconds between calls. May be less than one. Precision will depend on the underlying platform, the available hardware, and the load on the system.
+    ## now -- If True, run this call right now. Otherwise, wait until the interval has elapsed before beginning.
+
+import time
+from twisted.internet.task import LoopingCall
+class LoopingCountdown(object):
+
+    def __init__(self, counterStart, name, delayTime):
+      self.complete=False
+      self.counter, self.name, self.delayTime = (counterStart, name, delayTime)
+      self.starttime=time.time()
+      self.lc=LoopingCall(self.count)
+
+    def count(self):
+        if self.counter == 1:
+          ## this should move to a control loop
+            #reactor.stop()
+            self.complete=True
+            self.lc.stop()
+            print "%s just finished its last cycle.  It ran for a total of %f seconds"%(self.name, time.time()-self.starttime)
+        else:
+            self.counter -= 1
+            print "%s just ticked and has %i ticks left. delay is %f"%(self.name, self.counter, self.delayTime)
+
+class LoopingCountdowns(object):
+    """
+    Note:  This is a terrible class name since it is only one
+    letter different than the other class.  That said, it 
+    is designed to hold multiple countdown timers, so
+    whatever, I do what I want.
+    """
+
+    def __init__(self, *args):
+      self.allCountdowns=[LoopingCountdown(counterStart, name, delayTime) for counterStart, name, delayTime in args]
+      self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
+
+    def startTheLoop(self):
+      for eachActiveCounter in self.allCountdowns:
+        eachActiveCounter.lc.start(eachActiveCounter.delayTime)
+        self.theActualLoop(eachActiveCounter)
+
+    def theActualLoop(self, countDownTimer):
+      if not countDownTimer.complete:
+          countDownTimer.count()
+          self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
+          if self.activeCounters==0: reactor.stop()
+          LoopingCall(countDownTimer.delayTime,self.theActualLoop, countDownTimer)
+          if countDownTimer.complete:
+              self.theActualLoop(countDownTimer)
+      else:
+          print "%s just finished!"%(countDownTimer.name)
+          self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
+          if self.activeCounters==0: reactor.stop()
+if __name__ == '__main__':
+    from twisted.internet import reactor
+    groupOfCountdowns = LoopingCountdowns([10,"a",1.5],[2,"b", 15],[15,"c", 0.7])
+    reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
+    reactor.run()
