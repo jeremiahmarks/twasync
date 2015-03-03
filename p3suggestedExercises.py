@@ -3,7 +3,7 @@
 # @Author: Jeremiah Marks
 # @Date:   2015-03-02 23:11:48
 # @Last Modified 2015-03-03
-# @Last Modified time: 2015-03-03 01:21:13
+# @Last Modified time: 2015-03-03 01:26:41
 
 
 # From http://krondo.com/blog/?p=1333 - suggested Exercises
@@ -185,3 +185,13 @@ if __name__ == '__main__':
     groupOfCountdowns=Countdowns([10,"a",1.5],[2,"b", 15],[15,"c", 0.7])
     reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
     reactor.run()
+############################################################
+## Notes:
+    ## this runs more or less as expected. I found that I was 
+    ## calling reactor.callLater in both classes, once I resolved
+    ## that issue, the program ran more or less as expected.
+    ## although I did need to retool the process where it completes.
+    ## The way that it was before made it so that the reactor
+    ## was getting called for the delay even after there were
+    ## zero cycles left.  
+############################################################
