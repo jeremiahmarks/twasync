@@ -3,7 +3,7 @@
 # @Author: Jeremiah Marks
 # @Date:   2015-03-02 23:11:48
 # @Last Modified 2015-03-03
-# @Last Modified time: 2015-03-03 01:00:34
+# @Last Modified time: 2015-03-03 01:21:13
 
 
 # From http://krondo.com/blog/?p=1333 - suggested Exercises
@@ -76,21 +76,81 @@
 #####
 
 
+# class Countdown(object):
+
+#     def __init__(self, counterStart):
+#       self.complete=False
+#       self.counter = counterStart
+
+#     def count(self):
+#         if self.counter == 0:
+#           ## this should move to a control loop
+#             #reactor.stop()
+#             self.complete=True
+#         else:
+#             print self.counter, '...'
+#             self.counter -= 1
+#             reactor.callLater(1, self.count)
+
+# class Countdowns(object):
+#     """
+#     Note:  This is a terrible class name since it is only one
+#     letter different than the other class.  That said, it 
+#     is designed to hold multiple countdown timers, so
+#     whatever, I do what I want.
+#     """
+#     def __init__(self, *args):
+#       self.allCountdowns=[Countdown(counterStart) for counterStart, name in args]
+#       self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
+
+#     def startTheLoop(self):
+#       for eachActiveCounter in self.allCountdowns:
+#         self.theActualLoop(eachActiveCounter)
+
+#     def theActualLoop(self, countDownTimer):
+#       if not countDownTimer.complete:
+#           countDownTimer.count()
+#           reactor.callLater(1,self.theActualLoop, countDownTimer)
+#       else:
+#           print "One loop complete"
+#           self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
+#           print "%i loops to go!" %(self.activeCounters)
+#           if self.activeCounters==0: reactor.stop()
+
+# if __name__ == '__main__':
+#     from twisted.internet import reactor
+#     groupOfCountdowns=Countdowns([3,"a"],[5,"b"],[10,"c"])
+#     reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
+#     reactor.run()
+############################################################
+## Notes:
+    # This runs as intended, however I have seen examples that
+    # Include a variable timer, and they also have some easier 
+    # text to understand what is going on. I think that I will
+    # implement that basic functionality and then move to problem
+    # 2
+############################################################
+
+###
+## Third approach
+###
+import time
 class Countdown(object):
 
-    def __init__(self, counterStart):
+    def __init__(self, counterStart, name, delayTime):
       self.complete=False
-      self.counter = counterStart
+      self.counter, self.name, self.delayTime = (counterStart, name, delayTime)
+      self.starttime=time.time()
 
     def count(self):
         if self.counter == 0:
           ## this should move to a control loop
             #reactor.stop()
             self.complete=True
+            print "%s just finished its last cycle.  It ran for a total of %f seconds"%(self.name, time.time()-self.starttime)
         else:
-            print self.counter, '...'
             self.counter -= 1
-            reactor.callLater(1, self.count)
+            print "%s just ticked and has %i ticks left. delay is %f"%(self.name, self.counter, self.delayTime)
 
 class Countdowns(object):
     """
@@ -99,8 +159,9 @@ class Countdowns(object):
     is designed to hold multiple countdown timers, so
     whatever, I do what I want.
     """
+
     def __init__(self, *args):
-      self.allCountdowns=[Countdown(counterStart) for counterStart, name in args]
+      self.allCountdowns=[Countdown(counterStart, name, delayTime) for counterStart, name, delayTime in args]
       self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
 
     def startTheLoop(self):
@@ -110,15 +171,17 @@ class Countdowns(object):
     def theActualLoop(self, countDownTimer):
       if not countDownTimer.complete:
           countDownTimer.count()
-          reactor.callLater(1,self.theActualLoop, countDownTimer)
+          if countDownTimer.counter==0:
+              reactor.callLater(0,self.theActualLoop, countDownTimer)
+          else:
+              reactor.callLater(countDownTimer.delayTime,self.theActualLoop, countDownTimer)
       else:
-          print "One loop complete"
+          print "%s just finished!"%(countDownTimer.name)
           self.activeCounters=sum(1 for eachCounter in self.allCountdowns if eachCounter.complete==False)
-          print "%i loops to go!" %(self.activeCounters)
           if self.activeCounters==0: reactor.stop()
 
 if __name__ == '__main__':
     from twisted.internet import reactor
-    groupOfCountdowns=Countdowns([3,"a"],[5,"b"],[10,"c"])
+    groupOfCountdowns=Countdowns([10,"a",1.5],[2,"b", 15],[15,"c", 0.7])
     reactor.callWhenRunning(groupOfCountdowns.startTheLoop)
     reactor.run()
