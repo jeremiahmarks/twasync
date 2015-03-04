@@ -38,9 +38,44 @@ implementations**
 IReadDescriptor.doRead()  
 - reads data from the socket asynchronously when called from reactor
 
-** doRead is really a callback, but instead of passing it 
+**doRead is really a callback, but instead of passing it 
 directly to Twisted, we pass in an object with a doRead 
 method**
 
-**Common in twisted -  instead of passing a function you pass an object that must provide a given Interface.**
+**Common in twisted -  instead of passing a function you 
+pass an object that must provide a given Interface.**
 
+
+=========  
+
+One part of the original code for this part that I scratched
+my head about several times is this little bit:  
+
+    def parse_args():
+        parser = optparse.OptionParser(usage)
+        _, addresses = parser.parse_args()
+        if not addresses:
+            print parser.format_help()
+            parser.exit()
+        
+        def parse_address(addr):
+            if ':' not in addr:
+                host = '127.0.0.1'
+                port = addr
+            else:
+                host, port = addr.split(':', 1)
+            if not port.isdigit():
+                parser.error('Ports must be integers.')
+            return host, int(port)
+        return map(parse_address, addresses)
+
+Specifically it is this part that was throwing me:
+
+    def parse_args():
+        def parse_address(addr):
+
+This was blowing my mind until I finally noticed the `map` 
+call that is made at the end of the function.  I did not 
+know that you could create nested named functions like that.
+
+I just thought it was interesting, so I wanted to record it. 
