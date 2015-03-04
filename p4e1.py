@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Jeremiah Marks
 # @Date:   2015-03-03 22:48:03
-# @Last Modified 2015-03-03
-# @Last Modified time: 2015-03-03 23:22:52
+# @Last Modified 2015-03-04
+# @Last Modified time: 2015-03-04 00:39:05
 
 
 ############################################################
@@ -111,7 +111,6 @@ class PoetrySocket(object):
 def poetry_main():
     addresses = parse_args()
     start = datetime.datetime.now()
-    print [(i,"\t",addr) for i,addr in enumerate(addresses)]
     sockets = [PoetrySocket(i + 1, addr) for i, addr in enumerate(addresses)]
     from twisted.internet import reactor
     reactor.run()
